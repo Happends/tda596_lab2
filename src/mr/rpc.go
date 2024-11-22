@@ -16,15 +16,15 @@ import (
 // and reply for an RPC.
 //
 
-type ExampleArgs struct {
-	cmd int
-	arg string
+type Args struct {
+	Cmd int
+	Arg string
 }
 
-type ExampleReply struct {
-	resp int
-	arg  string
-}
+// type Reply struct {
+//	Resp int
+//	Arg  string
+// }
 
 // Add your RPC definitions here.
 
