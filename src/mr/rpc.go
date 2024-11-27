@@ -17,8 +17,9 @@ import (
 //
 
 type Args struct {
-	Cmd int
-	Arg string
+	Cmd       int
+	Arg       string
+	FileIndex int
 }
 
 // type Reply struct {
