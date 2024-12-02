@@ -17,9 +17,9 @@ import (
 //
 
 type Args struct {
-	Cmd       int
-	Arg       string
-	FileIndex int
+	Cmd                    int // 1 want work, 2 done with work
+	FileIndexOrReduceIndex int // if done fileindex says what fileindex is done
+	Reduce                 bool
 }
 
 // type Reply struct {
