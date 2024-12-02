@@ -54,13 +54,13 @@ func Worker(mapf func(string, string) []KeyValue,
 
 		switch reply.Cmd {
 		case 0: // work done acc // shouldn't be possible but ignore for now
-			fmt.Println("0: acc wrongly sent")
+			// fmt.Println("0: acc wrongly sent")
 			continue
 		case 3: // finsihed
-			fmt.Println("work done!")
+			// fmt.Println("work done!")
 			return
 		case 4:
-			fmt.Println("maps not finished, waiting")
+			// fmt.Println("maps not finished, waiting")
 			time.Sleep(1 * time.Second)
 			continue
 

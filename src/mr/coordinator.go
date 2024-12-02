@@ -2,7 +2,6 @@ package mr
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -87,7 +86,7 @@ func (c *Coordinator) Respond(args *Args, reply *Reply) error {
 		reduceN, err := c.get_reduce_number()
 
 		if err == nil {
-			fmt.Println("reduceN: ", reduceN)
+			// fmt.Println("reduceN: ", reduceN)
 			reply.Cmd = 2
 			reply.ReduceNumberOrFileIndex = reduceN
 			reply.NReduce = c.NReduce
@@ -148,7 +147,7 @@ func (c *Coordinator) Done() bool {
 	ret := false
 
 	if c.FileIndex == len(c.Files) && c.ReduceIndex == c.NReduce {
-		fmt.Println("Coordinator done")
+		// fmt.Println("Coordinator done")
 		ret = true
 	}
 	// Your code here.
@@ -224,7 +223,7 @@ func (c *Coordinator) time_out(reduce bool, index int) {
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{}
 
-	fmt.Println("create coordinator: \nFiles: ", files, "\nNReduce: ", nReduce)
+	// fmt.Println("create coordinator: \nFiles: ", files, "\nNReduce: ", nReduce)
 
 	c.Files = files
 	c.FilesMapSent = make([]bool, len(files))
@@ -236,7 +235,7 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 		c.FilesMapped[i] = false
 	}
 	c.FileIndex = 0
-	fmt.Println("nReduce: ", nReduce)
+	// fmt.Println("nReduce: ", nReduce)
 	c.NReduce = nReduce
 	c.ReduceSent = make([]bool, nReduce)
 	for i := 0; i < len(c.ReduceSent); i++ {
