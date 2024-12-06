@@ -3,17 +3,24 @@ FROM golang:1.20-alpine AS build
 RUN apk update
 RUN apk add bash
 RUN apk add git
+RUN apk add gcc
+RUN apk add musl-dev
 
 WORKDIR /app 
 
-RUN git clone git@github.com:Happends/tda596_lab2.git
+RUN git clone git://g.csail.mit.edu/6.5840-golabs-2023 6.5840
 
-WORKDIR /app/tda596_lab2/src/main
+WORKDIR /app/6.5840/src/mr
 
-RUN rm mr-out*
+COPY coordinator.go .
+COPY rpc.go .
+COPY worker.go .
 
-RUN build -buildmode=plugin -race ../mrapps/wc.go
+RUN echo $(ls -1 .)
 
+WORKDIR /app/6.5840/src/main
+
+RUN go build -buildmode=plugin ../mrapps/wc.go
 
 CMD ["go", "run", "-race", "mrcoordinator.go", "pg-*.txt"]
 
