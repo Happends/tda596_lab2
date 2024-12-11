@@ -68,30 +68,34 @@ func worker_map(mapf func(string, string) []KeyValue, reply *Reply, id string) (
 
 	mapf_output := mapf(reply.File, string(content))
 
+	var files []io.Writer;
+
+	fmt.Println("NReduces: ", reply.NReduce);
 	for i := 0; i < reply.NReduce; i++ {
 		path := fmt.Sprintf("./intermediate/mr-%d-%s-%d", reply.ReduceNumberOrFileIndex, id, i)
 		_, err := os.Stat(path)
 		if err != nil {
 			os.Remove(path)
 		}
-	}
-
-	for _, kv := range mapf_output { // create temp files first, then os.rename
-
-		path := fmt.Sprintf("./intermediate/mr-%d-%s-%d", reply.ReduceNumberOrFileIndex, id, ihash(kv.Key)%reply.NReduce)
-		file, err = os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+		file, err = os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600);
 
 		if err != nil {
 			fmt.Println("File OPEN FAULT")
 			file, err = os.Create(path)
 			if err != nil {
+				fmt.Println("cant create file?");
 				return "", err
 			}
 		}
+		files  = append(files, file);
+	}
 
-		enc := json.NewEncoder(file)
+	for _, kv := range mapf_output { // create temp files first, then os.rename
+
+		i := ihash(kv.Key)%reply.NReduce;
+
+		enc := json.NewEncoder(files[i])
 		enc.Encode(&kv)
-		file.Close()
 	}
 
 	return reply.File, nil
