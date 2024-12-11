@@ -250,7 +250,7 @@ func Worker(mapf func(string, string) []KeyValue,
 			reduce_number, err := worker_reduce(reducef, reply, w.Id)
 			if err != nil {
 				fmt.Println("couldn't map, err: ", err)
-				return
+				continue
 			}
 
 			reply, err = work_done(reply, w.Id)

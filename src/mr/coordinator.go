@@ -31,8 +31,9 @@ type Coordinator struct {
 func (c *Coordinator) Want_work(args *Args, reply *Reply) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	defer fmt.Println("requested work: ", reply.Cmd, " index: ", reply.ReduceNumberOrFileIndex, " by: ", args.Id)
 
+
+	fmt.Println("requested work by: ", args.Id);
 	index, file, err := get_file(c)
 
 	reply.Cmd = -1;
@@ -60,7 +61,6 @@ func (c *Coordinator) Want_work(args *Args, reply *Reply) error {
 					reply.NReduce = c.NReduce
 					c.FilesMapSent[i] = true
 					go time_out(c, false, i)
-					break
 				}
 			return nil
 		}
@@ -96,7 +96,6 @@ func (c *Coordinator) Want_work(args *Args, reply *Reply) error {
 					reply.NReduce = c.NReduce
 					reply.Ids = c.FilesMapped
 					go time_out(c, true, i)
-					break
 				}
 			return nil
 		}
