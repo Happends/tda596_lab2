@@ -206,7 +206,9 @@ func Worker(mapf func(string, string) []KeyValue,
 
 	// uncomment to send the Example RPC to the coordinator.
 	for {
+		fmt.Println("Getting work!");
 		reply, err := get_work(w.Id)
+		fmt.Println("Got work: ", w.Id);
 
 		if err != nil {
 			fmt.Println("error when getting work: ", err)
@@ -464,7 +466,7 @@ func MakeWorker() *Worker_struct {
 	// Your code here.
 
 	// fmt.Println("id: ", w.Id)
-	w.Id = "127.0.0.1:" + strconv.Itoa(os.Getpid()%(math.MaxInt16+1))
+	w.Id = "129.16.121.79:" + strconv.Itoa(os.Getpid()%(math.MaxInt16+1))
 	w.FilesMapped = []string{}
 	w.Reduced = []int{}
 

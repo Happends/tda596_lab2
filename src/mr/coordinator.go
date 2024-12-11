@@ -125,8 +125,10 @@ func (c *Coordinator) Work_done(args *Args, reply *Reply) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	if args.Reduce == false {
+		fmt.Println("mapped: ", args.FileIndexOrReduceIndex, "by: ", args.Id);
 		c.FilesMapped[args.FileIndexOrReduceIndex] = args.Id
 	} else {
+		fmt.Println("reduced: ", args.FileIndexOrReduceIndex, "by: ", args.Id);
 		c.ReduceDone[args.FileIndexOrReduceIndex] = args.Id
 	}
 	reply.Cmd = 0

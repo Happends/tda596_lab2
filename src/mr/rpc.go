@@ -41,7 +41,7 @@ type Worker_rpc_reply struct {
 // Can't use the current directory since
 // Athena AFS doesn't support UNIX-domain sockets.
 func coordinatorSock() string {
-	s := "127.0.0.1:3000"
+	s := "129.16.121.79:3000"
 	return s
 }
 
