@@ -45,21 +45,19 @@ func (c *Coordinator) Want_work(args *Args, reply *Reply) error {
 		return nil
 	}
 
-	for _, id := range c.FilesMapped {
+	for i, id := range c.FilesMapped {
 		if id == "" {
 			reply.Cmd = 4
 			reply.File = ""
-			for j := 0; j < len(c.FilesMapSent); j++ {
-				if !c.FilesMapSent[j] {
+				if !c.FilesMapSent[i] {
 					reply.Cmd = 1
-					reply.File = c.Files[j]
-					reply.ReduceNumberOrFileIndex = j
+					reply.File = c.Files[i]
+					reply.ReduceNumberOrFileIndex = i
 					reply.NReduce = c.NReduce
-					c.FilesMapSent[j] = true
-					go time_out(c, false, j)
+					c.FilesMapSent[i] = true
+					go time_out(c, false, i)
 					break
 				}
-			}
 			return nil
 		}
 	}
@@ -83,21 +81,19 @@ func (c *Coordinator) Want_work(args *Args, reply *Reply) error {
 		return nil
 	}
 
-	for _, id := range c.ReduceDone {
+	for i, id := range c.ReduceDone {
 		if id == "" {
 			reply.Cmd = 4
 			reply.File = ""
-			for j := 0; j < len(c.ReduceSent); j++ {
-				if !c.ReduceSent[j] {
-					c.ReduceSent[j] = true
+				if !c.ReduceSent[i] {
+					c.ReduceSent[i] = true
 					reply.Cmd = 2
-					reply.ReduceNumberOrFileIndex = j
+					reply.ReduceNumberOrFileIndex = i
 					reply.NReduce = c.NReduce
 					reply.Ids = c.FilesMapped
-					go time_out(c, true, j)
+					go time_out(c, true, i)
 					break
 				}
-			}
 			return nil
 		}
 	}
