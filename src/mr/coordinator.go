@@ -31,8 +31,12 @@ type Coordinator struct {
 func (c *Coordinator) Want_work(args *Args, reply *Reply) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	defer fmt.Println("requested work: ", reply.Cmd, " index: ", reply.ReduceNumberOrFileIndex, " by: ", args.Id)
 
 	index, file, err := get_file(c)
+
+	reply.Cmd = -1;
+	reply.ReduceNumberOrFileIndex = -1;
 
 	if err == nil {
 		// fmt.Println("index: ", index)
@@ -135,8 +139,11 @@ func (c *Coordinator) Work_done(args *Args, reply *Reply) error {
 }
 
 func (c *Coordinator) Invalid_worker(args *Args, reply *Reply) error {
+	fmt.Println("worker invalidated: ", args.Id);
 	for i, id := range c.FilesMapped {
+		fmt.Println("worker id: ", id);
 		if id == args.Id {
+			fmt.Println("worker id found:");
 			c.FilesMapped[i] = ""
 			c.FilesMapSent[i] = false
 		}

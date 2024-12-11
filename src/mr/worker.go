@@ -208,7 +208,7 @@ func Worker(mapf func(string, string) []KeyValue,
 	for {
 		fmt.Println("Getting work!");
 		reply, err := get_work(w.Id)
-		fmt.Println("Got work: ", w.Id);
+		fmt.Println("Got work: ", reply.Cmd, " index: ", reply.ReduceNumberOrFileIndex);
 
 		if err != nil {
 			fmt.Println("error when getting work: ", err)
@@ -232,7 +232,7 @@ func Worker(mapf func(string, string) []KeyValue,
 			filename, err := worker_map(mapf, reply, w.Id)
 			if err != nil {
 				fmt.Println("couldn't map, err: ", err)
-				return
+				continue
 			}
 
 			reply, err = work_done(reply, w.Id)
