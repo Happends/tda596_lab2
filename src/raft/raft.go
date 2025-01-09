@@ -59,7 +59,8 @@ const (
 )
 
 type LogEntry struct {
-	Term int
+	Term    int
+	Command interface{}
 }
 
 // A Go object implementing a single Raft peer.
@@ -91,6 +92,8 @@ type Raft struct {
 	votes           int
 	nAppliedEntries int
 	inTimer         bool
+
+	applyCh chan ApplyMsg
 }
 
 // return currentTerm and whether this server
@@ -300,11 +303,16 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 // term. the third return value is true if this server believes it is
 // the leader.
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
-	index := -1
-	term := -1
-	isLeader := true
+	index := len(rf.log)
+	term := rf.currentTerm
+	isLeader := rf.leaderId == rf.currentTerm
 
 	// Your code here (2B).
+
+	if isLeader {
+		rf.log = append(rf.log, LogEntry{Term: term, Command: command})
+		rf.nextIndex[rf.me] = index + 1
+	}
 
 	return index, term, isLeader
 }
@@ -355,6 +363,9 @@ func (rf *Raft) sendAppendEntriesMacro() {
 		args := AppendEntriesArgs{Term: rf.currentTerm, LeaderId: rf.me, LeaderCommit: rf.commitIndex}
 
 		total := len(rf.peers)
+		rf.mu.Lock()
+		logLastIndex := len(rf.log) - 1
+		rf.mu.Unlock()
 		// var wg sync.WaitGroup
 		ch := make(chan bool, total)
 		calls := 0
@@ -390,10 +401,10 @@ func (rf *Raft) sendAppendEntriesMacro() {
 				// fmt.Println("me:", rf.me, "ae i:", id, "ok:", ok)
 				rf.mu.Lock()
 				if ok {
-					if reply.Success {
+					if reply.Success && reply.Term == rf.currentTerm {
 						rf.nAppliedEntries += 1
-					}
-					if reply.Term > rf.currentTerm {
+						rf.nextIndex[id] = logLastIndex + 1
+					} else if reply.Term > rf.currentTerm {
 						rf.currentTerm = reply.Term
 					}
 					// fmt.Println("entries:", nAppliedEntries)
@@ -420,6 +431,7 @@ func (rf *Raft) sendAppendEntriesMacro() {
 			} else if rf.nAppliedEntries > total/2 {
 				// fmt.Println("Applied entries leader:", rf.me, "term:", rf.currentTerm)
 				// FIX HANDLE WHEN APPLIED ENTRIES SUCCEED
+				rf.commitIndex = logLastIndex
 				rf.mu.Unlock()
 				break
 				// set nextIndex
@@ -588,6 +600,16 @@ func (rf *Raft) resetTimer(function func()) {
 
 }
 
+func (rf *Raft) checkCommitAndMatch() {
+	for {
+		if rf.lastApplied < rf.commitIndex {
+			for i := rf.lastApplied; i <= rf.commitIndex; i++ {
+				rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log}
+			}
+		}
+	}
+}
+
 // the service or tester wants to create a Raft server. the ports
 // of all the Raft servers (including this one) are in peers[]. this
 // server's port is peers[me]. all the servers' peers[] arrays
@@ -626,12 +648,16 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.nAppliedEntries = 0
 	rf.inTimer = false
 
+	rf.applyCh = applyCh
+
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 
 	// start ticker goroutine to start elections
 	rf.resetTimer(rf.timerTimeout)
 	// go rf.ticker()
+
+	go checkCommitAndMatch()
 
 	return rf
 }
