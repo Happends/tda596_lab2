@@ -347,7 +347,7 @@ func (rf *Raft) ticker() {
 
 		// pause for a random amount of time between 50 and 350
 		// milliseconds.
-		ms := 50 + (rand.Int63() % 100)
+		ms := 300 + (rand.Int63() % 300)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 	}
 }
@@ -445,7 +445,7 @@ func (rf *Raft) sendAppendEntriesMacro() {
 		// }
 		// rf.mu.Unlock()
 		fmt.Println("heartbeat done: ", rf.me, "leaderId:", rf.leaderId)
-		time.Sleep(time.Duration(13) * time.Millisecond)
+		time.Sleep(time.Duration(100) * time.Millisecond)
 	}
 }
 
@@ -583,7 +583,7 @@ func (rf *Raft) resetTimer(function func()) {
 		return
 	}
 
-	ms := 40 + (rand.Int63() % 50)
+	ms := 200 + (rand.Int63() % 200)
 	timer := time.NewTimer(time.Duration(ms) * time.Millisecond)
 	// fmt.Println("making new channel:", rf.me)
 	rf.stopTimer = make(chan bool, 5)
@@ -603,10 +603,30 @@ func (rf *Raft) resetTimer(function func()) {
 func (rf *Raft) checkCommitAndMatch() {
 	for {
 		if rf.lastApplied < rf.commitIndex {
-			for i := rf.lastApplied; i <= rf.commitIndex; i++ {
-				rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log}
+			for i := rf.lastApplied; i < rf.commitIndex; i++ {
+				rf.lastApplied++
+				rf.applyCh <- ApplyMsg{CommandValid: true, Command: rf.log[rf.lastApplied].Command, CommandIndex: rf.lastApplied}
 			}
 		}
+
+		if rf.leaderId == rf.me && len(rf.matchIndex) > 0 {
+			lowestIndex := -1
+			for i, index := range rf.matchIndex {
+				if i == 0 {
+					lowestIndex = index
+				} else {
+					lowestIndex = int(math.Min(float64(lowestIndex), float64(index)))
+				}
+			}
+			if lowestIndex > rf.commitIndex {
+				for !(rf.currentTerm == rf.log[lowestIndex].Term || lowestIndex == rf.commitIndex) {
+					lowestIndex--
+				}
+				rf.commitIndex = lowestIndex
+			}
+		}
+
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 
@@ -657,7 +677,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.resetTimer(rf.timerTimeout)
 	// go rf.ticker()
 
-	go checkCommitAndMatch()
+	go rf.checkCommitAndMatch()
 
 	return rf
 }
