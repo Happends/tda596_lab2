@@ -261,6 +261,7 @@ type AppendEntriesArgs struct {
 type AppendEntriesReply struct {
 	Term    int
 	Success bool
+	Index   int
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {
@@ -276,8 +277,16 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.mu.Lock()
 		// fmt.Println("me:", rf.me, "terms", args.Term, rf.currentTerm, "prevTerms", rf.log[args.PrevLogIndex].Term, args.PrevLogTerm)
 		// fmt.Println("me:", rf.me, "rf.log len:", len(rf.log), "prevLogIndex:", args.PrevLogIndex)
-		if args.Term < rf.currentTerm || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+		if args.Term < rf.currentTerm || len(rf.log) <= args.PrevLogIndex || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 			reply.Success = false
+			index := len(rf.log) - 1
+			term := rf.log[index].Term
+			index--
+			for index > 0 || rf.log[index].Term == term {
+				index--
+			}
+			reply.Term = rf.log[index].Term
+			reply.Index = index
 			rf.mu.Unlock()
 			return
 		}
@@ -423,8 +432,13 @@ func (rf *Raft) sendAppendEntriesMacro() {
 
 						rf.commitupdateCond.Signal()
 						// fmt.Println("id:", id, "nextIndex:", rf.nextIndex[id], "nextIndexes:", rf.nextIndex)
-					} else if reply.Term > rf.currentTerm {
-						rf.currentTerm = reply.Term
+					} else {
+						if rf.nextIndex[id] > 0 {
+							rf.nextIndex[id]--
+						}
+						if reply.Term > rf.currentTerm {
+							rf.currentTerm = reply.Term
+						}
 					}
 					// fmt.Println("entries:", nAppliedEntries)
 				} else {
@@ -527,8 +541,9 @@ func (rf *Raft) timerTimeout() {
 			}
 			calls += 1
 			rf.mu.Unlock()
-			ch <- true
 			// fmt.Println("me:", rf.me, "votes: ", rf.votes, "total/2:", total/2)
+
+			ch <- true
 		}(i)
 
 		// fmt.Println("vote i:", i, "ok:", ok, "voteGranted:", reply.VoteGranted)
@@ -554,6 +569,9 @@ func (rf *Raft) timerTimeout() {
 			// fmt.Println("voted leader:", rf.me, "term:", rf.currentTerm)
 			rf.leaderId = rf.me
 
+			for i := range rf.nextIndex {
+				rf.nextIndex[i] = rf.lastApplied
+			}
 			rf.inTimer = false
 			rf.mu.Unlock()
 			go rf.sendAppendEntriesMacro()
